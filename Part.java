@@ -20,8 +20,22 @@ import javax.crypto.SecretKey;
 public class Part {
 
 	private final String name;
-	// TODO Chave simétrica SHA1 512
-	// private String password;
+
+	/**
+	 * TODO password - hash
+	 * primeiros 128 bytes do hash usar como chave simetrica para criptografar pvk
+	 */
+	
+	/**
+	 * 1) Gerar chave simétrica da conversa / vetor inicialização
+	 * 2) Criptografar chave pública com a chave publica de B
+	 * 3) Assinar msg com a chave privada de A
+	 * 
+	 * 1) Verificar assinatura publica A
+	 * 2) descriptografar pvt B
+	 * 3) Guardar chave simétrica da conversa
+	 * 
+	 */
 
 	private PrivateKey pvk;
 	private PublicKey puk;
