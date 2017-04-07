@@ -1,10 +1,6 @@
 package br.com.furb.cripto;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -15,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 import org.apache.commons.io.FileUtils;
 
@@ -24,18 +21,15 @@ public class Part {
     private AES passwordAES;
 
     /**
-     * 1) Gerar chave simétrica da conversa / vetor inicialização
-     * 2) Criptografar chave simétrica com a chave publica de B
-     * 3) Assinar msg com a chave privada de A
+     * 1) Gerar chave simétrica da conversa / vetor inicialização 2) Criptografar chave simétrica com a chave publica de B 3) Assinar msg com a chave privada de A
      * 
-     * 1) Verificar assinatura publica A
-     * 2) descriptografar pvt B
-     * 3) Guardar chave simétrica da conversa
+     * 1) Verificar assinatura publica A 2) descriptografar pvt B 3) Guardar chave simétrica da conversa
      * 
      */
     private KeyPair keyPair;
 
     private Map<String/* Name */, SecretKey> secretKeys = new HashMap<>();
+    private Map<String/* Name */, IvParameterSpec> vectors = new HashMap<>();
 
     public Part(String name) throws Throwable {
 	this.name = name;
@@ -85,19 +79,6 @@ public class Part {
 	return false;
     }
 
-    private static void writeInSameLine(File file, String txt) throws Throwable {
-	try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-	    writer.write(txt);
-	    writer.flush();
-	}
-    }
-
-    private static String readLine(File file) throws Throwable {
-	try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-	    return reader.readLine();
-	}
-    }
-
     private PrivateKey getPrivateKey() throws Throwable {
 	Constants.tempDir.mkdirs();
 	File keyFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".pvk");
@@ -106,9 +87,9 @@ public class Part {
 	    keyFile.createNewFile();
 
 	    String encrypted = new String(MyBase64.encode(passwordAES.encrypt(keyPair.getPrivate().getEncoded())));
-	    writeInSameLine(keyFile, encrypted);
+	    MyFileUtils.writeInSameLine(keyFile, encrypted);
 	}
-	byte[] encrypted = passwordAES.decrypt(MyBase64.decode(readLine(keyFile).getBytes()));
+	byte[] encrypted = passwordAES.decrypt(MyBase64.decode(MyFileUtils.readLine(keyFile).getBytes()));
 	PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encrypted);
 	KeyFactory kf = KeyFactory.getInstance("RSA");
 	return kf.generatePrivate(keySpec);
@@ -122,10 +103,10 @@ public class Part {
 	if (!keyFile.exists()) {
 	    keyFile.createNewFile();
 
-	    writeInSameLine(keyFile, new String(MyBase64.encode(keyPair.getPublic().getEncoded())));
+	    MyFileUtils.writeInSameLine(keyFile, new String(MyBase64.encode(keyPair.getPublic().getEncoded())));
 	    newKey = true;
 	}
-	String encodec = readLine(keyFile);
+	String encodec = MyFileUtils.readLine(keyFile);
 	X509EncodedKeySpec spec = new X509EncodedKeySpec(MyBase64.decode(encodec.getBytes()));
 	KeyFactory kf = KeyFactory.getInstance("RSA");
 
@@ -139,6 +120,47 @@ public class Part {
 
     public String getName() {
 	return name;
+    }
+
+    public void sendMessage(Part otherPart, String msg) throws Throwable {
+	if (secretKeys.containsKey(otherPart.getName())) {
+	    System.out.println("Send msg: " + msg);
+	    SecretKey otherPartSecretKey = secretKeys.get(otherPart.getName());
+
+	    AES otherAES = new AES(otherPartSecretKey.getEncoded(), generateVectorByName(otherPart.getName()));
+	    byte[] data = otherAES.encrypt(msg.getBytes(Constants.DEFAULT_CHARSET));
+	    byte[] dataWithSignature = RSASignature.getSignature(data, getPrivateKey());
+	    otherPart.receiveMessage(this, data, dataWithSignature);
+	}
+    }
+
+    public IvParameterSpec generateVectorByName(String name) throws Throwable {
+	if (vectors.containsKey(name)) {
+	    return vectors.get(name);
+	} else {
+	    IvParameterSpec vector = AES.getParameterSpecByFile(name, PublicKeyRepository.getInstance().get(name));
+	    vectors.put(name, vector);
+	    return vector;
+	}
+    }
+
+    private void receiveMessage(Part part, byte[] data, byte[] dataWithSignature) throws Throwable {
+	if (RSASignature.validateSignature(dataWithSignature, data, PublicKeyRepository.getInstance().get(part.getName()))) {
+	    SecretKey partSecretKey = secretKeys.get(part.getName());
+	    AES otherAES = new AES(partSecretKey.getEncoded(), getVectorByName(name));
+	    byte[] decrypt = otherAES.decrypt(data);
+	    System.out.println("Received msg: " + new String(decrypt));
+	}
+    }
+
+    public IvParameterSpec getVectorByName(String name) throws Throwable {
+	if (vectors.containsKey(name)) {
+	    return vectors.get(name);
+	} else {
+	    IvParameterSpec vector = AES.getParameterSpecByFile(name, getPrivateKey());
+	    vectors.put(name, vector);
+	    return vector;
+	}
     }
 
     public static void main(String[] args) throws Throwable {

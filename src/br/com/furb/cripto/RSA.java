@@ -20,10 +20,14 @@ public class RSA {
 	return KeyPairGenerator.getInstance("RSA").generateKeyPair();
     }
 
-    public static byte[] encrypt(String value, PublicKey publicKey) throws Throwable {
+    public static byte[] encrypt(byte[] bytes, PublicKey publicKey) throws Throwable {
 	Cipher c = Cipher.getInstance("RSA");
 	c.init(Cipher.ENCRYPT_MODE, publicKey);
-	return MyBase64.encode(c.doFinal(value.getBytes()));
+	return MyBase64.encode(c.doFinal(bytes));
+    }
+
+    public static byte[] encrypt(String value, PublicKey publicKey) throws Throwable {
+	return encrypt(value.getBytes(Constants.DEFAULT_CHARSET), publicKey);
     }
 
     private byte[] encrypt(String value) throws Throwable {

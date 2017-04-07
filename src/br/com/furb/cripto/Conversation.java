@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 public class Conversation {
 
     public static void main(String[] args) throws Throwable {
+	// Chamar se quiser que limpe o diretório
 	FileUtils.cleanDirectory(Constants.tempDir);
 
 	Part a = new Part("a");
@@ -14,6 +15,7 @@ public class Conversation {
 	System.out.println(a.connect(b));
 	System.out.println(a.connect(b));
 	System.out.println(b.connect(c));
+	a.sendMessage(b, "Message");
     }
 
 }

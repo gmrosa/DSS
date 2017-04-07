@@ -1,5 +1,9 @@
 package br.com.furb.cripto;
 
+import java.io.File;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -13,8 +17,42 @@ public class AES {
 
     public AES(String key) throws Throwable {
 	skeySpec = new SecretKeySpec(key.getBytes(Constants.DEFAULT_CHARSET), "AES");
+	iv = generateParameterSpec();
+    }
+
+    public AES(byte[] key) throws Throwable {
+	skeySpec = new SecretKeySpec(key, "AES");
+	iv = generateParameterSpec();
+    }
+
+    public AES(byte[] key, IvParameterSpec iv) throws Throwable {
+	skeySpec = new SecretKeySpec(key, "AES");
+	this.iv = iv;
+    }
+
+    public static IvParameterSpec generateParameterSpec() throws Throwable {
 	byte[] newKey = generateSecretKey().getEncoded();
-	iv = new IvParameterSpec(newKey);
+	return new IvParameterSpec(newKey);
+    }
+
+    public static IvParameterSpec getParameterSpecByFile(String name, PublicKey publicKey) throws Throwable {
+	File vectorFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".iv");
+	byte[] newKey = generateSecretKey().getEncoded();
+	RSA.encrypt(newKey, publicKey);
+	MyFileUtils.writeInSameLine(vectorFile, new String(newKey));
+
+	return new IvParameterSpec(newKey);
+    }
+
+    public static IvParameterSpec getParameterSpecByFile(String name, PrivateKey privateKey) throws Throwable {
+	File vectorFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".iv");
+	if (vectorFile.exists()) {
+	    String line = MyFileUtils.readLine(vectorFile);
+	    byte[] fileBytes = line.getBytes(Constants.DEFAULT_CHARSET);
+	    byte[] key = RSA.decrypt(fileBytes, privateKey);
+	    return new IvParameterSpec(key);
+	}
+	return null;
     }
 
     public static SecretKey generateSecretKey() throws Throwable {
