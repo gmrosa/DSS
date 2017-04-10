@@ -27,7 +27,7 @@ public class RSA {
     }
 
     public static byte[] encrypt(String value, PublicKey publicKey) throws Throwable {
-	return encrypt(value.getBytes(Constants.DEFAULT_CHARSET), publicKey);
+	return encrypt(value.getBytes(), publicKey);
     }
 
     private byte[] encrypt(String value) throws Throwable {

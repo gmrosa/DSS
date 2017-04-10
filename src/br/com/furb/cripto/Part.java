@@ -19,13 +19,6 @@ public class Part {
 
     private final String name;
     private AES passwordAES;
-
-    /**
-     * 1) Gerar chave simétrica da conversa / vetor inicialização 2) Criptografar chave simétrica com a chave publica de B 3) Assinar msg com a chave privada de A
-     * 
-     * 1) Verificar assinatura publica A 2) descriptografar pvt B 3) Guardar chave simétrica da conversa
-     * 
-     */
     private KeyPair keyPair;
 
     private Map<String/* Name */, SecretKey> secretKeys = new HashMap<>();
@@ -124,13 +117,15 @@ public class Part {
 
     public void sendMessage(Part otherPart, String msg) throws Throwable {
 	if (secretKeys.containsKey(otherPart.getName())) {
-	    System.out.println("Send msg: " + msg);
+	    System.out.println("\"" + name + "\" enviou mensagem para \"" + otherPart.getName() + "\" mensagem: " + msg);
 	    SecretKey otherPartSecretKey = secretKeys.get(otherPart.getName());
-
-	    AES otherAES = new AES(otherPartSecretKey.getEncoded(), generateVectorByName(otherPart.getName()));
-	    byte[] data = otherAES.encrypt(msg.getBytes(Constants.DEFAULT_CHARSET));
+	    IvParameterSpec iv = generateVectorByName(otherPart.getName());
+	    AES otherAES = new AES(otherPartSecretKey.getEncoded(), iv);
+	    byte[] data = otherAES.encrypt(msg.getBytes());
 	    byte[] dataWithSignature = RSASignature.getSignature(data, getPrivateKey());
 	    otherPart.receiveMessage(this, data, dataWithSignature);
+	} else {
+	    System.out.println("\"" + name + "\" não está conectado com \"" + otherPart.getName() + "\"");
 	}
     }
 
@@ -147,9 +142,11 @@ public class Part {
     private void receiveMessage(Part part, byte[] data, byte[] dataWithSignature) throws Throwable {
 	if (RSASignature.validateSignature(dataWithSignature, data, PublicKeyRepository.getInstance().get(part.getName()))) {
 	    SecretKey partSecretKey = secretKeys.get(part.getName());
-	    AES otherAES = new AES(partSecretKey.getEncoded(), getVectorByName(name));
+	    AES otherAES = new AES(partSecretKey.getEncoded(), getVectorByName(part.getName()));
 	    byte[] decrypt = otherAES.decrypt(data);
-	    System.out.println("Received msg: " + new String(decrypt));
+	    System.out.println("\"" + name + "\" recebeu mensagem de \"" + part.getName() + "\" mensagem " + new String(decrypt));
+	} else {
+	    System.out.println("\"" + name + "\" não está conectado com \"" + part.getName() + "\"");
 	}
     }
 
@@ -157,9 +154,9 @@ public class Part {
 	if (vectors.containsKey(name)) {
 	    return vectors.get(name);
 	} else {
-	    IvParameterSpec vector = AES.getParameterSpecByFile(name, getPrivateKey());
-	    vectors.put(name, vector);
-	    return vector;
+	    IvParameterSpec iv = AES.getParameterSpecByFile(this.getName(), getPrivateKey());
+	    vectors.put(name, iv);
+	    return iv;
 	}
     }
 

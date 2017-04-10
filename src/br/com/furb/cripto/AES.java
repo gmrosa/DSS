@@ -16,7 +16,7 @@ public class AES {
     private IvParameterSpec iv;
 
     public AES(String key) throws Throwable {
-	skeySpec = new SecretKeySpec(key.getBytes(Constants.DEFAULT_CHARSET), "AES");
+	skeySpec = new SecretKeySpec(key.getBytes(), "AES");
 	iv = generateParameterSpec();
     }
 
@@ -38,19 +38,19 @@ public class AES {
     public static IvParameterSpec getParameterSpecByFile(String name, PublicKey publicKey) throws Throwable {
 	File vectorFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".iv");
 	byte[] newKey = generateSecretKey().getEncoded();
-	RSA.encrypt(newKey, publicKey);
-	MyFileUtils.writeInSameLine(vectorFile, new String(newKey));
+	IvParameterSpec iv = new IvParameterSpec(newKey);
+	byte[] encrypt = MyBase64.encode(RSA.encrypt(iv.getIV(), publicKey));
+	MyFileUtils.writeInSameLine(vectorFile, new String(encrypt));
 
-	return new IvParameterSpec(newKey);
+	return iv;
     }
 
     public static IvParameterSpec getParameterSpecByFile(String name, PrivateKey privateKey) throws Throwable {
 	File vectorFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".iv");
 	if (vectorFile.exists()) {
 	    String line = MyFileUtils.readLine(vectorFile);
-	    byte[] fileBytes = line.getBytes(Constants.DEFAULT_CHARSET);
-	    byte[] key = RSA.decrypt(fileBytes, privateKey);
-	    return new IvParameterSpec(key);
+	    byte[] decrypt = RSA.decrypt(MyBase64.decode(line.getBytes()), privateKey);
+	    return new IvParameterSpec(decrypt);
 	}
 	return null;
     }
