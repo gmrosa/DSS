@@ -98,6 +98,7 @@ public class AES {
 	File vectorFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".iv");
 	if (vectorFile.exists()) {
 	    String line = MyFileUtils.readLine(vectorFile);
+	    // decoda Base64 e descriptografa RSA
 	    byte[] decrypt = RSA.decrypt(MyBase64.decode(line.getBytes()), privateKey);
 	    return new IvParameterSpec(decrypt);
 	}

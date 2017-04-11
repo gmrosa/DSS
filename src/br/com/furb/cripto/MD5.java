@@ -13,6 +13,17 @@ public class MD5 {
      * Gera um hash de 128 bits.
      * 
      * @param input
+     *            chave
+     * @return hash
+     */
+    public static String generateHash128(String input) {
+	return generateHash(input).substring(0, 16);
+    }
+
+    /**
+     * Gera um hash de 128 bits.
+     * 
+     * @param input
      *            chave secreta
      * @return hash
      */
@@ -59,6 +70,7 @@ public class MD5 {
      * @throws Throwable
      */
     public static void main(String[] args) {
+	System.out.println(generateHash("Hash"));
 	System.out.println(generateHash("Hash").length());
     }
 
