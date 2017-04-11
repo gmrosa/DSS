@@ -5,6 +5,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+/**
+ * Criptografia OneTimeXor
+ * 
+ * @author Guilherme.Rosa
+ */
 public class OneTimeXor {
 
     private static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
@@ -41,6 +46,12 @@ public class OneTimeXor {
 	return saida;
     }
 
+    /**
+     * Apenas para testes.
+     * 
+     * @param args
+     * @throws Throwable
+     */
     public static void main(String args[]) throws IOException {
 	String plano = "Vamos fazer um teste maior. Será que vai funcionar agora, Guilherme?";
 	String chave = "Atenção!Atenção!Atenção!Atenção!Atenção!Atenção!Atenção!Atenção!Aten";

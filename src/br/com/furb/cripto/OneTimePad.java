@@ -2,6 +2,11 @@ package br.com.furb.cripto;
 
 import java.io.IOException;
 
+/**
+ * Criptografia OneTimePad
+ * 
+ * @author Guilherme.Rosa
+ */
 public class OneTimePad {
 
     private static final int MIN_POS = 65;
@@ -47,6 +52,12 @@ public class OneTimePad {
 	return textoCriptografado;
     }
 
+    /**
+     * Apenas para testes.
+     * 
+     * @param args
+     * @throws Throwable
+     */
     public static void main(String args[]) throws IOException {
 
 	String entrada = "Boa aula";

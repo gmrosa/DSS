@@ -2,8 +2,19 @@ package br.com.furb.cripto;
 
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Representa a troca de mensagens entre usuários.
+ * 
+ * @author Guilherme.Rosa
+ */
 public class Conversation {
 
+    /**
+     * Apenas para testes
+     * 
+     * @param args
+     * @throws Throwable
+     */
     public static void main(String[] args) throws Throwable {
 	// Chamar se quiser que limpe o diretório
 	FileUtils.cleanDirectory(Constants.tempDir);
@@ -23,7 +34,7 @@ public class Conversation {
 	c.sendMessage(a, "4 c para a");
 	b.sendMessage(a, "5 b para a");
 	b.sendMessage(c, "6 b para c");
-	
+
 	a.sendMessage(d, "7 a para d");
     }
 
