@@ -23,8 +23,8 @@ import org.apache.commons.io.FileUtils;
 public class Part {
 
     private final String name;
-    private AES passwordAES;
     private KeyPair keyPair;
+    private OneTimeXor passwordOTX;
 
     private Map<String/* Name */, SecretKey> secretKeys = new HashMap<>();
     private Map<String/* Name */, IvParameterSpec> vectors = new HashMap<>();
@@ -42,7 +42,6 @@ public class Part {
 	this.name = name;
 	setPassword(password);
 	keyPair = RSA.generateKeyPair();
-	// primeiros 128 bytes do hash usar como chave simétrica para criptografar pvk
 	getPrivateKey();
 	getPublicKey();
     }
@@ -55,9 +54,9 @@ public class Part {
      * @throws Throwable
      */
     private void setPassword(String password) throws Throwable {
+	// Pouco importa a senha real, o que fica é o hash
 	String hash = MD5.generateHash128(password);
-	// Pouco importa a senha o que fica é o hash
-	passwordAES = new AES(hash);
+	passwordOTX = new OneTimeXor(hash);
     }
 
     /**
@@ -207,28 +206,23 @@ public class Part {
      * @throws Throwable
      */
     private PrivateKey getPrivateKey() throws Throwable {
-	if (passwordAES == null) {
+	if (passwordOTX == null) {
 	    throw new IllegalStateException("É necessário informar a senha do usuário");
 	}
 	Constants.tempDir.mkdirs();
 	File keyFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".pvk");
 
-	byte[] bytesEncPvK;
 	// Se não tem gera um novo arquivo
 	if (!keyFile.exists()) {
 	    keyFile.createNewFile();
-
-	    bytesEncPvK = passwordAES.encrypt(keyPair.getPrivate().getEncoded());
-	    String base64EncPvK = MyBase64.encodeToString(bytesEncPvK);
-	    //String encrypted = new String(base64EncPvK);
-	    System.out.println(base64EncPvK);
-	    MyFileUtils.writeInSameLine(keyFile, base64EncPvK);
+	    // Criptografa e depois encoda com base64
+	    byte[] bytesEncPvK = passwordOTX.encrypt(keyPair.getPrivate().getEncoded());
+	    MyFileUtils.writeInSameLine(keyFile, new String(MyBase64.encode(bytesEncPvK)));
 	}
 	// Lê o arquivo
-	bytesEncPvK = MyBase64.decode(MyFileUtils.readLine(keyFile).getBytes());
 	String bytesEncPvKFromFile = MyFileUtils.readLine(keyFile);
-	System.out.println(new String(bytesEncPvKFromFile));
-	byte[] encrypted = passwordAES.decrypt(bytesEncPvKFromFile);
+	// Decoda com base64 e depois descriptografa
+	byte[] encrypted = passwordOTX.decrypt(MyBase64.decode(bytesEncPvKFromFile));
 	// Gera a chave privada
 	PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encrypted);
 	KeyFactory kf = KeyFactory.getInstance("RSA");
@@ -242,7 +236,6 @@ public class Part {
      * @throws Throwable
      */
     private PublicKey getPublicKey() throws Throwable {
-	boolean newKey = false;
 	Constants.tempDir.mkdirs();
 	File keyFile = new File(Constants.tempDir.getAbsolutePath() + File.separator + name + ".puk");
 
@@ -251,7 +244,6 @@ public class Part {
 	    keyFile.createNewFile();
 
 	    MyFileUtils.writeInSameLine(keyFile, new String(MyBase64.encode(keyPair.getPublic().getEncoded())));
-	    newKey = true;
 	}
 	// Lê o arquivo
 	String encodec = MyFileUtils.readLine(keyFile);
@@ -260,10 +252,8 @@ public class Part {
 	KeyFactory kf = KeyFactory.getInstance("RSA");
 
 	PublicKey puk = kf.generatePublic(spec);
-	if (newKey) {
-	    // Troca mensagem com o repositório armazenar uma nova chave pública
-	    PublicKeyRepository.getInstance().put(name, puk);
-	}
+	// Troca mensagem com o repositório armazenar uma nova chave pública
+	PublicKeyRepository.getInstance().put(name, puk);
 	return puk;
     }
 

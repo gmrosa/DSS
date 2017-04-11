@@ -47,7 +47,10 @@ public class PublicKeyRepository {
      * @param puk chave pública
      */
     public void put(String user, PublicKey puk) {
-	publicKeys.put(user, puk);
+	// Adiciona somente a primeira vez
+	if (!publicKeys.containsKey(user)) {
+	    publicKeys.put(user, puk);
+	}
     }
 
 }

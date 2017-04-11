@@ -34,11 +34,6 @@ public class MyBase64 {
     public static byte[] encode(byte[] bytes) {
 	return Base64.getEncoder().encode(bytes);
     }
-    
-    public static String encodeToString(byte[] bytes) {
-	return Base64.getEncoder().encodeToString(bytes);
-    }
-
 
     /**
      * Decoda texto.
@@ -61,10 +56,6 @@ public class MyBase64 {
     public static byte[] decode(byte[] bytes) {
 	return Base64.getDecoder().decode(bytes);
     }
-    
-//    public static String decodeToString(byte[] bytes) {
-//	return Base64.getDecoder().deco
-//    }
 
     /**
      * Apenas para testes
