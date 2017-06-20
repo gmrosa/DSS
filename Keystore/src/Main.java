@@ -11,7 +11,7 @@ public class Main {
     private static final String KEY_STORE_PASSWORD = "123456";
     private static final String alias = "mydomain";
     private static final String currentPath = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-    private static final String fileName = "keystore.crt";
+    private static final String fileName = "keystore.jks";
     private static final File keyFile = new File(currentPath + File.separator + fileName);
 
     public static void main(String[] args) throws Throwable {
